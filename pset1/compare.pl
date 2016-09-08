@@ -32,19 +32,21 @@ sub run_sh61 ($;%) {
         $dir =~ s{/+$}{};
         $size_limit_file = [map { m{^/} ? $_ : "$dir/$_" } @$size_limit_file];
     }
-    pipe(OR, OW);
+    pipe(OR, OW) or die "pipe";
     fcntl(OR, F_SETFL, fcntl(OR, F_GETFL, 0) | O_NONBLOCK);
     1 while waitpid(-1, WNOHANG) > 0;
 
     $run61_pid = fork();
     if ($run61_pid == 0) {
-        setpgrp(0, 0);
+        POSIX::setpgid(0, 0) or die("child setpgid: $!\n");
         defined($dir) && chdir($dir);
 
-        my($fn) = exists($opt{"stdin"}) ? $opt{"stdin"} : "/dev/null";
-        my($fd) = POSIX::open($fn, O_RDONLY);
-        POSIX::dup2($fd, 0);
-        POSIX::close($fd) if $fd != 0;
+        my($fn) = defined($opt{"stdin"}) ? $opt{"stdin"} : "/dev/null";
+        if (defined($fn) && $fn ne "/dev/stdin") {
+            my($fd) = POSIX::open($fn, O_RDONLY);
+            POSIX::dup2($fd, 0);
+            POSIX::close($fd) if $fd != 0;
+        }
 
         close(OR);
         open(OW, ">", $outfile) || die if defined($outfile) && $outfile ne "pipe";
@@ -52,15 +54,23 @@ sub run_sh61 ($;%) {
         POSIX::dup2(fileno(OW), 2);
         close(OW) if fileno(OW) != 1 && fileno(OW) != 2;
 
+        fcntl(STDIN, F_SETFD, fcntl(STDIN, F_GETFD, 0) & ~FD_CLOEXEC);
+        fcntl(STDOUT, F_SETFD, fcntl(STDOUT, F_GETFD, 0) & ~FD_CLOEXEC);
+        fcntl(STDERR, F_SETFD, fcntl(STDERR, F_GETFD, 0) & ~FD_CLOEXEC);
+
         { exec($command) };
         print STDERR "error trying to run $command: $!\n";
         exit(1);
     }
 
+    POSIX::setpgid($run61_pid, $run61_pid) or die("setpgid: $!\n");
+
     my($before) = Time::HiRes::time();
     my($died) = 0;
     my($max_time) = exists($opt{"time_limit"}) ? $opt{"time_limit"} : 0;
     my($out, $buf, $nb) = ("", "");
+    my($answer) = exists($opt{"answer"}) ? $opt{"answer"} : {};
+    $answer->{"command"} = $command;
 
     close(OW);
 
@@ -85,11 +95,11 @@ sub run_sh61 ($;%) {
     };
 
     my($delta) = Time::HiRes::time() - $before;
-
-    my($answer) = exists($opt{"answer"}) ? $opt{"answer"} : {};
-    $answer->{"command"} = $command;
     $answer->{"time"} = $delta;
 
+    if (exists($answer->{"status"}) && exists($opt{"delay"}) && $opt{"delay"} > 0) {
+        Time::HiRes::usleep($opt{"delay"} * 1e6);
+    }
     if (exists($opt{"nokill"})) {
         $answer->{"pgrp"} = $run61_pid;
     } else {
@@ -103,7 +113,7 @@ sub run_sh61 ($;%) {
         return $answer;
     }
 
-    if ($outfile) {
+    if (defined($outfile) && $outfile ne "pipe") {
         $out = "";
         close(OR);
         open(OR, "<", (defined($dir) ? "$dir/$outfile" : $outfile));
