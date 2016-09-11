@@ -234,7 +234,7 @@ if (@ARGV > 0 && -f $ARGV[0]) {
                      $ARGV[0], $ARGV[1], $ARGV[2] ? $ARGV[2] : $ARGV[0]));
 } else {
     $ENV{"MALLOC_CHECK_"} = 0;
-    my($maxtest, $ntest, $ntestfailed) = (30, 0, 0);
+    my($maxtest, $ntest, $ntestfailed) = (32, 0, 0);
     for ($i = 1; $i <= $maxtest; $i += 1) {
         next if !test_runnable($i);
         ++$ntest;
