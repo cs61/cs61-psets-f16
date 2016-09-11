@@ -25,9 +25,18 @@ static unsigned alloc_random(void) {
     return x >> 32;
 }
 
+static void base_alloc_atexit(void);
+
 void* base_malloc(size_t sz) {
     if (disabled)
         return malloc(sz);
+
+    static int base_alloc_atexit_installed = 0;
+    if (!base_alloc_atexit_installed) {
+        atexit(base_alloc_atexit);
+        base_alloc_atexit_installed = 1;
+    }
+
     unsigned r = alloc_random();
     // try to use a previously-freed block 75% of the time
     if (r % 4 != 0)
@@ -78,4 +87,11 @@ void base_free(void* ptr) {
 
 void base_disablealloc(int d) {
     disabled = d;
+}
+
+static void base_alloc_atexit(void) {
+    for (size_t i = 0; i < nfrees; ++i)
+        free(allocs[frees[i]].ptr);
+    free(frees);
+    free(allocs);
 }
