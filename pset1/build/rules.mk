@@ -4,8 +4,11 @@ ISCLANG := $(shell if $(CC) --version | grep LLVM >/dev/null; then echo 1; else 
 CC += -std=gnu11 -W -Wall -Wshadow
 CFLAGS ?= -g $(DEFS)
 O ?= -O3
-ifeq ($(filter 0 1 2 3,$(O)),$(strip $(O)))
+ifeq ($(filter 0 1 2 3 s,$(O)),$(strip $(O)))
 override O := -O$(O)
+endif
+ifeq ($(SANITIZE),1)
+CC += -fsanitize=address -fsanitize=undefined
 endif
 
 # these rules ensure dependencies are created
