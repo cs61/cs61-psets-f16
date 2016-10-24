@@ -77,12 +77,20 @@ seta20.2:       inb     $0x64, %al              # Get status
 init_pt:
         movl    $INITIAL_PT, %edi       # clear page table memory
         xorl    %eax, %eax
-        movl    $(0x2000 / 4), %ecx
+        movl    $(0x3000 / 4), %ecx
         rep stosl
 
-        movl    $INITIAL_PT, %edi       # set up page table
+        # set up initial page table.
+        # 0x8000: L1 page table; entry 0 points to:
+        # 0x9000: L2 page table; entry 0 points to:
+        # 0xA000: L3 page table; entry 0 is a huge page covering 0-0x3FFFFFFF
+        # Modern x86-64 processors support PTE_PS on L2 page entries,
+        # but the CS 61 Appliance's QEMU does not.
+        movl    $INITIAL_PT, %edi       # set up page table: use a large page
         leal    0x1000 + PTE_P + PTE_W + PTE_U(%edi), %ecx
         movl    %ecx, (%edi)
+        leal    0x2000 + PTE_P + PTE_W + PTE_U(%edi), %ecx
+        movl    %ecx, 0x1000(%edi)
         movl    $(PTE_P + PTE_W + PTE_U + PTE_PS), -7(%ecx)
         movl    %edi, %cr3
 

@@ -693,9 +693,10 @@ void check_keyboard(void) {
         // process of reinitializing memory. This replicates work the
         // bootloader does.
         x86_64_pagetable* pt = (x86_64_pagetable*) 0x8000;
-        memset(pt, 0, PAGESIZE * 2);
+        memset(pt, 0, PAGESIZE * 3);
         pt[0].entry[0] = 0x9000 | PTE_P | PTE_W | PTE_U;
-        pt[1].entry[0] = PTE_P | PTE_W | PTE_U | PTE_PS;
+        pt[1].entry[0] = 0xA000 | PTE_P | PTE_W | PTE_U;
+        pt[2].entry[0] = PTE_P | PTE_W | PTE_U | PTE_PS;
         lcr3((uintptr_t) pt);
         // The soft reboot process doesn't modify memory, so it's
         // safe to pass `multiboot_info` on the kernel stack, even
