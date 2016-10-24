@@ -194,7 +194,7 @@ void exception(x86_64_registers* reg) {
         break;                  /* will not be reached */
 
     case INT_SYS_PAGE_ALLOC: {
-        uintptr_t addr = current->p_registers.reg_rax;
+        uintptr_t addr = current->p_registers.reg_rdi;
         int r = assign_physical_page(addr, current->p_pid);
         if (r >= 0)
             virtual_memory_map(current->p_pagetable, addr, addr,

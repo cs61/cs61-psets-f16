@@ -32,7 +32,7 @@ void panic(const char* format, ...) {
     if (len > 0 && buf[len - 1] != '\n')
         strcpy(buf + len - (len == (int) sizeof(buf) - 1), "\n");
     (void) console_printf(CPOS(23, 0), 0xC000, "%s", buf);
-    syscall_1_arg(INT_SYS_PANIC, 0);
+    sys_panic(NULL);
  spinloop: goto spinloop;       // should never get here
 }
 
@@ -40,6 +40,6 @@ void assert_fail(const char* file, int line, const char* msg) {
     (void) console_printf(CPOS(23, 0), 0xC000,
                           "PANIC: %s:%d: assertion '%s' failed\n",
                           file, line, msg);
-    syscall_1_arg(INT_SYS_PANIC, 0);
+    sys_panic(NULL);
  spinloop: goto spinloop;       // should never get here
 }
