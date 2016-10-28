@@ -40,7 +40,7 @@ static int program_load_segment(proc* p, const elf_program* ph,
 
 // program_load(p, programnumber)
 //    Load the code corresponding to program `programnumber` into the process
-//    `p` and set `p->p_registers.reg_eip` to its entry point. Calls
+//    `p` and set `p->p_registers.reg_rip` to its entry point. Calls
 //    `assign_physical_page` to as required. Returns 0 on success and
 //    -1 on failure (e.g. out-of-memory). `allocator` is passed to
 //    `virtual_memory_map`.
@@ -94,7 +94,11 @@ static int program_load_segment(proc* p, const elf_program* ph,
     // ensure new memory mappings are active
     set_pagetable(p->p_pagetable);
 
+    // copy data from executable image into process memory
     memcpy((uint8_t*) va, src, end_file - va);
     memset((uint8_t*) end_file, 0, end_mem - end_file);
+
+    // restore kernel pagetable
+    set_pagetable(kernel_pagetable);
     return 0;
 }

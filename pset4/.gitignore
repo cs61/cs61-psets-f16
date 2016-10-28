@@ -1,9 +1,8 @@
 *~
 core*
 log.txt
-os[0-9]*.img
+*.img
 obj
 pset.tgz
-weensyos.img
 weensyos1
 weensyos1.tar.gz

@@ -71,7 +71,7 @@ static inline pid_t __attribute__((noreturn)) sys_panic(const char* msg) {
     asm volatile ("int %0" : /* no result */
                   : "i" (INT_SYS_PANIC), "D" (msg)
                   : "cc", "memory");
- spinloop: goto spinloop;
+ loop: goto loop;
 }
 
 

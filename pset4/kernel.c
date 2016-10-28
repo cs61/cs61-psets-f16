@@ -109,7 +109,7 @@ void kernel(const char* command) {
 // process_setup(pid, program_number)
 //    Load application program `program_number` as process number `pid`.
 //    This loads the application's code and data into memory, sets its
-//    %eip and %esp, gives it a stack page, and marks it as runnable.
+//    %rip and %rsp, gives it a stack page, and marks it as runnable.
 
 void process_setup(pid_t pid, int program_number) {
     process_init(&processes[pid], 0);
@@ -217,10 +217,10 @@ void exception(x86_64_registers* reg) {
                 ? "protection problem" : "missing page";
 
         if (!(reg->reg_err & PFERR_USER))
-            panic("Kernel page fault for %p (%s %s, eip=%p)!\n",
+            panic("Kernel page fault for %p (%s %s, rip=%p)!\n",
                   addr, operation, problem, reg->reg_rip);
         console_printf(CPOS(24, 0), 0x0C00,
-                       "Process %d page fault for %p (%s %s, eip=%p)!\n",
+                       "Process %d page fault for %p (%s %s, rip=%p)!\n",
                        current->p_pid, addr, operation, problem, reg->reg_rip);
         current->p_state = P_BROKEN;
         break;

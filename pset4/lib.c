@@ -181,6 +181,7 @@ void printer_vprintf(printer* p, int color, const char* format, va_list val) {
     again:
         switch (*format) {
         case 'l':
+        case 'z':
             length = 1;
             ++format;
             goto again;

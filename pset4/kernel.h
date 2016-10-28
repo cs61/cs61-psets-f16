@@ -163,7 +163,8 @@ int keyboard_readc(void);
 //    Check for the user typing a control key. 'a', 'f', and 'e' cause a soft
 //    reboot where the kernel runs the allocator programs, "fork", or
 //    "forkexit", respectively. Control-C or 'q' exit the virtual machine.
-void check_keyboard(void);
+//    Returns key typed or -1 for no key.
+int check_keyboard(void);
 
 
 // process_init(p, flags)
@@ -190,5 +191,14 @@ int program_load(proc* p, int programnumber,
 //    so that messages written to the QEMU "parallel port" end up in `log.txt`.
 void log_printf(const char* format, ...) __attribute__((noinline));
 void log_vprintf(const char* format, va_list val) __attribute__((noinline));
+
+
+// error_printf, error_vprintf
+//    Print debugging messages to the console and to the host's
+//    `log.txt` file via `log_printf`.
+int error_printf(int cpos, int color, const char* format, ...)
+    __attribute__((noinline));
+int error_vprintf(int cpos, int color, const char* format, va_list val)
+    __attribute__((noinline));
 
 #endif

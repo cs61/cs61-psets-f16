@@ -681,12 +681,34 @@ void log_printf(const char* format, ...) {
 }
 
 
+// error_printf, error_vprintf
+//    Print debugging messages to the console and to the host's
+//    `log.txt` file via `log_printf`.
+
+int error_vprintf(int cpos, int color, const char* format, va_list val) {
+    va_list val2;
+    __builtin_va_copy(val2, val);
+    log_vprintf(format, val2);
+    va_end(val2);
+    return console_vprintf(cpos, color, format, val);
+}
+
+int error_printf(int cpos, int color, const char* format, ...) {
+    va_list val;
+    va_start(val, format);
+    cpos = error_vprintf(cpos, color, format, val);
+    va_end(val);
+    return cpos;
+}
+
+
 // check_keyboard
 //    Check for the user typing a control key. 'a', 'f', and 'e' cause a soft
 //    reboot where the kernel runs the allocator programs, "fork", or
 //    "forkexit", respectively. Control-C or 'q' exit the virtual machine.
+//    Returns key typed or -1 for no key.
 
-void check_keyboard(void) {
+int check_keyboard(void) {
     int c = keyboard_readc();
     if (c == 'a' || c == 'f' || c == 'e') {
         // Install a temporary page table to carry us through the
@@ -715,6 +737,7 @@ void check_keyboard(void) {
                      : : "b" (multiboot_info) : "memory");
     } else if (c == 0x03 || c == 'q')
         poweroff();
+    return c;
 }
 
 
@@ -738,20 +761,12 @@ void panic(const char* format, ...) {
 
     if (format) {
         // Print panic message to both the screen and the log
-        int cpos = console_printf(CPOS(23, 0), 0xC000, "PANIC: ");
-        log_printf("PANIC: ");
-
-        cpos = console_vprintf(cpos, 0xC000, format, val);
-        log_vprintf(format, val);
-
-        if (CCOL(cpos)) {
-            cpos = console_printf(cpos, 0xC000, "\n");
-            log_printf("\n");
-        }
-    } else {
-        (void) console_printf(CPOS(23, 0), 0xC000, "PANIC");
-        log_printf("PANIC\n");
-    }
+        int cpos = error_printf(CPOS(23, 0), 0xC000, "PANIC: ");
+        cpos = error_vprintf(cpos, 0xC000, format, val);
+        if (CCOL(cpos))
+            error_printf(cpos, 0xC000, "\n");
+    } else
+        error_printf(CPOS(23, 0), 0xC000, "PANIC");
 
     va_end(val);
     fail();
